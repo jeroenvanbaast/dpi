@@ -1,4 +1,6 @@
-package amro.bank;
+package forms;
+import models.BankInterestReply;
+import models.BankInterestRequest;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -16,8 +18,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-import model.bank.*;
-import messaging.requestreply.RequestReply;
+import models.RequestReply;
 
 public class JMSBankFrame extends JFrame {
 

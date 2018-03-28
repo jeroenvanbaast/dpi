@@ -1,4 +1,4 @@
-package broker.loanbroker;
+package forms;
 
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
@@ -12,12 +12,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
-import model.bank.*;
-import model.loan.LoanRequest;
+import models.*;
 
 
 public class LoanBrokerFrame extends JFrame {
-
+    
 	/**
 	 * 
 	 */

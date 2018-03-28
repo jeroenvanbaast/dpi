@@ -1,7 +1,8 @@
-package broker.loanbroker;
+package forms;
 
-import model.loan.*;
-import model.bank.*;
+import models.BankInterestReply;
+import models.BankInterestRequest;
+import models.LoanRequest;
 
 /**
  * This class represents one line in the JList in Loan Broker.

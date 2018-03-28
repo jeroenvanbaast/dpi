@@ -1,5 +1,7 @@
-package client.loanclient;
+package forms;
 
+import models.LoanReply;
+import models.LoanRequest;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -13,6 +15,8 @@ import javax.jms.Session;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 
@@ -26,12 +30,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-import messaging.requestreply.RequestReply;
-import model.loan.*;
+import models.RequestReply;
+import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-public class LoanClientFrame extends JFrame
-{
+public class LoanClientFrame extends JFrame {
 
     /**
      *
@@ -47,11 +50,16 @@ public class LoanClientFrame extends JFrame
     private JLabel lblNewLabel_1;
     private JTextField tfTime;
 
+    // fields for mq connection
+    private Session session;
+    private MessageProducer producer;
+            
+    
     /**
      * Create the frame.
      */
-    public LoanClientFrame()
-    {
+    public LoanClientFrame() throws JMSException {
+        createConnection();
         setTitle("Loan Client");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -60,20 +68,16 @@ public class LoanClientFrame extends JFrame
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         GridBagLayout gbl_contentPane = new GridBagLayout();
-        gbl_contentPane.columnWidths = new int[]
-        {
+        gbl_contentPane.columnWidths = new int[]{
             0, 0, 30, 30, 30, 30, 0
         };
-        gbl_contentPane.rowHeights = new int[]
-        {
+        gbl_contentPane.rowHeights = new int[]{
             30, 30, 30, 30, 30
         };
-        gbl_contentPane.columnWeights = new double[]
-        {
+        gbl_contentPane.columnWeights = new double[]{
             0.0, 1.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE
         };
-        gbl_contentPane.rowWeights = new double[]
-        {
+        gbl_contentPane.rowWeights = new double[]{
             0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE
         };
         contentPane.setLayout(gbl_contentPane);
@@ -130,20 +134,16 @@ public class LoanClientFrame extends JFrame
         tfTime.setColumns(10);
 
         JButton btnQueue = new JButton("send loan request");
-        btnQueue.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent arg0)
-            {
+        btnQueue.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
                 int ssn = Integer.parseInt(tfSSN.getText());
                 int amount = Integer.parseInt(tfAmount.getText());
                 int time = Integer.parseInt(tfTime.getText());
-                
+
                 LoanRequest request = new LoanRequest(ssn, amount, time);
-                try
-                {
-                    sendLoan(request);
-                } catch (JMSException ex)
-                {
+                try {
+                    sendLoanRequest(request);
+                } catch (JMSException ex) {
                     Logger.getLogger(LoanClientFrame.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 listModel.addElement(new RequestReply<LoanRequest, LoanReply>(request, null));
@@ -179,14 +179,11 @@ public class LoanClientFrame extends JFrame
      * @param request
      * @return
      */
-    private RequestReply<LoanRequest, LoanReply> getRequestReply(LoanRequest request)
-    {
+    private RequestReply<LoanRequest, LoanReply> getRequestReply(LoanRequest request) {
 
-        for (int i = 0; i < listModel.getSize(); i++)
-        {
+        for (int i = 0; i < listModel.getSize(); i++) {
             RequestReply<LoanRequest, LoanReply> rr = listModel.get(i);
-            if (rr.getRequest() == request)
-            {
+            if (rr.getRequest() == request) {
                 return rr;
             }
         }
@@ -194,38 +191,39 @@ public class LoanClientFrame extends JFrame
         return null;
     }
 
-    public static void main(String[] args)
-    {
-        EventQueue.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                try
-                {
+    public static void main(String[] args) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                try {
                     LoanClientFrame frame = new LoanClientFrame();
 
                     frame.setVisible(true);
-                } catch (Exception e)
-                {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         });
     }
 
-    public void sendLoan(LoanRequest loanRequest) throws JMSException
-    {
+    public void createConnection() throws JMSException{
         //created ConnectionFactory object for creating connection 
-        ConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616/");
+        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(ActiveMQConnection.DEFAULT_BROKER_URL);
         //Establish the connection
         Connection connection = factory.createConnection();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue("loan");
+        connection.start();
+        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue("loanRequest");
         //Added as a producer
-        javax.jms.MessageProducer producer = session.createProducer(queue);
+        producer = session.createProducer(queue);
+    }
+
+    public void sendLoanRequest(LoanRequest loanRequest) throws JMSException {
         // Create and send the message
         ObjectMessage objectMessage = session.createObjectMessage();
         objectMessage.setObject(loanRequest);
         producer.send(objectMessage);
     }
+    
+    
+   
 }

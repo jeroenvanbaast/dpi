@@ -1,4 +1,4 @@
-package model.bank;
+package models;
 
 /**
  *

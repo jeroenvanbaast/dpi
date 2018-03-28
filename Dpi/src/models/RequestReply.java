@@ -1,4 +1,4 @@
-package messaging.requestreply;
+package models;
 
 /**
  * This class stores pairs Request-Reply. We will use this class in Loan Client and ABN Amro applications
