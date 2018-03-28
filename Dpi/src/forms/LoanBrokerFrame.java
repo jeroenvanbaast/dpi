@@ -91,6 +91,7 @@ public class LoanBrokerFrame extends JFrame implements MessageListener {
         scrollPane.setViewportView(list);
     }
 
+  
     private JListLine getRequestReply(LoanRequest request) {
 
         for (int i = 0; i < listModel.getSize(); i++) {
@@ -212,8 +213,7 @@ public class LoanBrokerFrame extends JFrame implements MessageListener {
         objectMessage.setObject(returnRequestReply);
         producerLoan.send(objectMessage);
 
-        // addToList
-       
+        // addToList       dit gaat nog fout in de getRequestReply() methode
         add(loanRequest, bankInterestReply);
     }
 }
