@@ -19,6 +19,7 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
+import javax.jms.Topic;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -208,13 +209,14 @@ public class LoanClientFrame extends JFrame {
     public void createConnection() throws JMSException{
         //created ConnectionFactory object for creating connection 
         ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(ActiveMQConnection.DEFAULT_BROKER_URL);
+        factory.setTrustAllPackages(true);
         //Establish the connection
         Connection connection = factory.createConnection();
         connection.start();
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue("loanRequest");
+        Topic topic = session.createTopic("loan");
         //Added as a producer
-        producer = session.createProducer(queue);
+        producer = session.createProducer(topic);
     }
 
     public void sendLoanRequest(LoanRequest loanRequest) throws JMSException {

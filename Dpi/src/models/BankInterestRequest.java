@@ -1,11 +1,13 @@
 package models;
 
+import java.io.Serializable;
+
 /**
  *
- * This class stores all information about an request from a bank to offer
- * a loan to a specific client.
+ * This class stores all information about an request from a bank to offer a
+ * loan to a specific client.
  */
-public class BankInterestRequest {
+public class BankInterestRequest implements Serializable {
 
     private int amount; // the requested loan amount
     private int time; // the requested loan period
@@ -29,7 +31,6 @@ public class BankInterestRequest {
     public void setAmount(int amount) {
         this.amount = amount;
     }
-
 
     public int getTime() {
         return time;
