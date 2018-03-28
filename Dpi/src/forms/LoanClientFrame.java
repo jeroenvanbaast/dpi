@@ -16,6 +16,8 @@ import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
@@ -35,7 +37,7 @@ import models.RequestReply;
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-public class LoanClientFrame extends JFrame {
+public class LoanClientFrame extends JFrame implements MessageListener {
 
     /**
      *
@@ -54,8 +56,7 @@ public class LoanClientFrame extends JFrame {
     // fields for mq connection
     private Session session;
     private MessageProducer producer;
-            
-    
+
     /**
      * Create the frame.
      */
@@ -206,7 +207,7 @@ public class LoanClientFrame extends JFrame {
         });
     }
 
-    public void createConnection() throws JMSException{
+    public void createConnection() throws JMSException {
         //created ConnectionFactory object for creating connection 
         ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(ActiveMQConnection.DEFAULT_BROKER_URL);
         factory.setTrustAllPackages(true);
@@ -214,9 +215,15 @@ public class LoanClientFrame extends JFrame {
         Connection connection = factory.createConnection();
         connection.start();
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic topic = session.createTopic("loan");
+        Queue queueLoanRequest = session.createQueue("loanRequest");
+
+        //Set up a consumer to consume messages off of the admin queue
+        Queue queueLoanReply = session.createQueue("loanReply");
+        MessageConsumer consumer = session.createConsumer(queueLoanReply);
+        consumer.setMessageListener(this);
+
         //Added as a producer
-        producer = session.createProducer(topic);
+        producer = session.createProducer(queueLoanRequest);
     }
 
     public void sendLoanRequest(LoanRequest loanRequest) throws JMSException {
@@ -225,7 +232,25 @@ public class LoanClientFrame extends JFrame {
         objectMessage.setObject(loanRequest);
         producer.send(objectMessage);
     }
-    
-    
-   
+
+    @Override
+    public void onMessage(Message msg) {
+        try {
+            if (msg instanceof ObjectMessage) {
+                Object object = ((ObjectMessage) msg).getObject();
+                if (object instanceof RequestReply) {
+                    RequestReply requestReply = (RequestReply) object;
+                    recieveLoanReply(requestReply);
+                }
+            }
+        } catch (JMSException ex) {
+            Logger.getLogger(LoanBrokerFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void recieveLoanReply(RequestReply requestReply) {
+        LoanRequest loanRequest = (LoanRequest) requestReply.getRequest();
+        listModel.removeElement(getRequestReply(loanRequest));
+        listModel.addElement(requestReply);
+    }
 }

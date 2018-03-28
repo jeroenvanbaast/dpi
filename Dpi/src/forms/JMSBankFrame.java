@@ -149,14 +149,15 @@ public class JMSBankFrame extends JFrame implements MessageListener {
         Connection connection = factory.createConnection();
         connection.start();
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue("bankInterest");
+        Queue queueRequest = session.createQueue("bankRequest");
 
         //Set up a consumer to consume messages off of the admin queue
-        MessageConsumer consumer = session.createConsumer(queue);
+        MessageConsumer consumer = session.createConsumer(queueRequest);
         consumer.setMessageListener(this);
 
         //Set producer
-        producer = session.createProducer(queue);
+        Queue queueReply = session.createQueue("bankReply");
+        producer = session.createProducer(queueReply);
     }
 
     @Override

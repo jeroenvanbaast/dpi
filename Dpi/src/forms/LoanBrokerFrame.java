@@ -39,7 +39,8 @@ public class LoanBrokerFrame extends JFrame implements MessageListener {
     private DefaultListModel<JListLine> listModel = new DefaultListModel<JListLine>();
     private JList<JListLine> list;
 
-    private MessageProducer producer;
+    private MessageProducer producerLoan;
+    private MessageProducer producerBank;
     private Session session;
 
     public static void main(String[] args) {
@@ -130,23 +131,28 @@ public class LoanBrokerFrame extends JFrame implements MessageListener {
         Connection connection = factory.createConnection();
         connection.start();
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue("loan");
+        Queue queueLoanRequest = session.createQueue("loanRequest");
 
         //Set up a consumer to consume messages off of the admin queue
-        MessageConsumer consumer = session.createConsumer(queue);
+        MessageConsumer consumer = session.createConsumer(queueLoanRequest);
         consumer.setMessageListener(this);
 
+        Queue queueLoanReply = session.createQueue("loanReply");
+        producerLoan = session.createProducer(queueLoanReply);
+
         //Set producer
-        Queue sendQueue = session.createQueue("bankInterest");
-        producer = session.createProducer(sendQueue);
+        Queue queueBankRequest = session.createQueue("bankRequest");
+        producerBank = session.createProducer(queueBankRequest);
 
         //consume response
-        MessageConsumer responseConsumer = session.createConsumer(sendQueue);
+        Queue queueBankReply = session.createQueue("bankReply");
+        MessageConsumer responseConsumer = session.createConsumer(queueBankReply);
         responseConsumer.setMessageListener(this);
     }
 
     /**
      * Method that is called when a new message is recieved.
+     *
      * @param msg the recieved message
      */
     @Override
@@ -154,13 +160,13 @@ public class LoanBrokerFrame extends JFrame implements MessageListener {
         try {
             if (msg instanceof ObjectMessage) {
                 Object object = ((ObjectMessage) msg).getObject();
-                
+
                 if (object instanceof LoanRequest) {
                     LoanRequest loanRequest = (LoanRequest) object;
                     add(loanRequest);
                     sendBankInterestRequest(loanRequest);
                 }
-                
+
                 if (object instanceof RequestReply) {
                     RequestReply reqeustReply = (RequestReply) object;
                     if (reqeustReply.getReply() instanceof BankInterestReply) {
@@ -178,12 +184,15 @@ public class LoanBrokerFrame extends JFrame implements MessageListener {
         BankInterestRequest bankInterestRequest = new BankInterestRequest();
         bankInterestRequest.setAmount(loanRequest.getAmount());
         bankInterestRequest.setTime(loanRequest.getTime());
-        
+        bankInterestRequest.setLoanRequest(loanRequest);
+
         // send bankInterestRequest
         ObjectMessage objectMessage = session.createObjectMessage();
         objectMessage.setObject(bankInterestRequest);
-        producer.send(objectMessage);
-        add(loanRequest,bankInterestRequest);
+        producerBank.send(objectMessage);
+
+        // addToList
+        add(loanRequest, bankInterestRequest);
     }
 
     public void sendLoanReply(RequestReply requestReply) throws JMSException {
@@ -192,10 +201,19 @@ public class LoanBrokerFrame extends JFrame implements MessageListener {
         BankInterestReply bankInterestReply = (BankInterestReply) requestReply.getReply();
         loanReply.setInterest(bankInterestReply.getInterest());
         loanReply.setQuoteID(bankInterestReply.getQuoteId());
+
+         BankInterestRequest BankInterestRequest = (BankInterestRequest) requestReply.getRequest();
+         LoanRequest loanRequest = BankInterestRequest.getLoanRequest();
+        // create RequestReply to Send
+        RequestReply returnRequestReply = new RequestReply(loanRequest,loanReply);
         
         // send loanReply
         ObjectMessage objectMessage = session.createObjectMessage();
-        objectMessage.setObject(loanReply);
-        producer.send(objectMessage);
+        objectMessage.setObject(returnRequestReply);
+        producerLoan.send(objectMessage);
+
+        // addToList
+       
+        add(loanRequest, bankInterestReply);
     }
 }
