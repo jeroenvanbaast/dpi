@@ -1,0 +1,87 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package gateway;
+
+import forms.JMSBankFrame;
+import forms.LoanBrokerFrame;
+import forms.LoanClientFrame;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
+import models.BankInterestReply;
+import models.BankInterestRequest;
+import models.LoanReply;
+import models.LoanRequest;
+
+/**
+ *
+ * @author Jeroen
+ */
+public class LoanBrokerAppGateway {
+
+    private MessageSenderGateway messageSenderGateway;
+    private MessageReceiverGateway messageReceiverGateway;
+
+    private MessageSenderGateway messageSenderGatewayBank;
+    private MessageReceiverGateway messageReceiverGatewayBank;
+    
+    private LoanClientFrame loanClientFrame;
+    private JMSBankFrame jmsBankFrame;
+
+    public LoanBrokerAppGateway(LoanClientFrame frame) throws JMSException {
+        this.messageSenderGateway = new MessageSenderGateway("laonRequest");
+        this.messageReceiverGateway = new MessageReceiverGateway("loanReply");
+        this.loanClientFrame = frame;
+    }
+
+    public LoanBrokerAppGateway(JMSBankFrame frame) throws JMSException {
+        this.messageSenderGatewayBank = new MessageSenderGateway("bankRequest");
+        this.messageReceiverGatewayBank = new MessageReceiverGateway("bankReply");
+        this.jmsBankFrame = frame;
+    }
+
+    public void applyForLoan(LoanRequest request) throws JMSException {
+        ObjectMessage message = messageSenderGateway.createMessage(request);
+        messageSenderGateway.send(message);
+    }
+
+    public void responseToBroker(BankInterestReply reply) throws JMSException {
+        ObjectMessage message = messageSenderGateway.createMessage(reply);
+        messageSenderGatewayBank.send(message);
+    }
+
+    public void onLoanReplyArrived() throws JMSException {
+        messageReceiverGateway.setListener((Message msg) -> {
+            if (msg instanceof ObjectMessage) {
+                try {
+                    LoanReply reply = (LoanReply) ((ObjectMessage) msg).getObject();
+                    loanClientFrame.add(reply);
+                } catch (JMSException ex) {
+                    Logger.getLogger(LoanBrokerAppGateway.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
+    }
+
+    public void onBankReplyArrived() throws JMSException {
+        messageReceiverGatewayBank.setListener(new MessageListener() {
+            @Override
+            public void onMessage(Message msg) {
+                if(msg instanceof ObjectMessage){
+                    try {
+                        BankInterestReply reply = (BankInterestReply) ((ObjectMessage) msg).getObject();
+                        jmsBankFrame.add(reply);
+                    } catch (JMSException ex) {
+                        Logger.getLogger(LoanBrokerAppGateway.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        });
+    }
+}

@@ -1,5 +1,6 @@
 package forms;
 
+import gateway.LoanBrokerAppGateway;
 import models.BankInterestReply;
 import models.BankInterestRequest;
 import java.awt.EventQueue;
@@ -35,7 +36,7 @@ import models.RequestReply;
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-public class JMSBankFrame extends JFrame implements MessageListener {
+public class JMSBankFrame extends JFrame {
 
     /**
      *
@@ -45,8 +46,7 @@ public class JMSBankFrame extends JFrame implements MessageListener {
     private JTextField tfReply;
     private DefaultListModel<RequestReply<BankInterestRequest, BankInterestReply>> listModel = new DefaultListModel<RequestReply<BankInterestRequest, BankInterestReply>>();
 
-    private MessageProducer producer;
-    private Session session;
+    private LoanBrokerAppGateway loanBrokerAppGateway;
 
     /**
      * Launch the application.
@@ -67,12 +67,9 @@ public class JMSBankFrame extends JFrame implements MessageListener {
     /**
      * Create the frame.
      */
-    public JMSBankFrame() {
-        try {
-            createConnection();
-        } catch (JMSException ex) {
-            Logger.getLogger(LoanBrokerFrame.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    public JMSBankFrame() throws JMSException {
+        loanBrokerAppGateway = new LoanBrokerAppGateway(this);
+        
         setTitle("JMS Bank - ABN AMRO");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 300);
@@ -85,7 +82,7 @@ public class JMSBankFrame extends JFrame implements MessageListener {
         gbl_contentPane.columnWeights = new double[]{1.0, 0.0, 1.0, 0.0, 0.0, Double.MIN_VALUE};
         gbl_contentPane.rowWeights = new double[]{1.0, 0.0, Double.MIN_VALUE};
         contentPane.setLayout(gbl_contentPane);
-
+        
         JScrollPane scrollPane = new JScrollPane();
         GridBagConstraints gbc_scrollPane = new GridBagConstraints();
         gbc_scrollPane.gridwidth = 5;
@@ -94,10 +91,10 @@ public class JMSBankFrame extends JFrame implements MessageListener {
         gbc_scrollPane.gridx = 0;
         gbc_scrollPane.gridy = 0;
         contentPane.add(scrollPane, gbc_scrollPane);
-
-        final JList<RequestReply<BankInterestRequest, BankInterestReply>> list = new JList<RequestReply<BankInterestRequest, BankInterestReply>>(listModel);
+        
+        JList<RequestReply<BankInterestRequest, BankInterestReply>> list = new JList<RequestReply<BankInterestRequest, BankInterestReply>>(listModel);
         scrollPane.setViewportView(list);
-
+        
         JLabel lblNewLabel = new JLabel("type reply");
         GridBagConstraints gbc_lblNewLabel = new GridBagConstraints();
         gbc_lblNewLabel.anchor = GridBagConstraints.EAST;
@@ -105,7 +102,7 @@ public class JMSBankFrame extends JFrame implements MessageListener {
         gbc_lblNewLabel.gridx = 0;
         gbc_lblNewLabel.gridy = 1;
         contentPane.add(lblNewLabel, gbc_lblNewLabel);
-
+        
         tfReply = new JTextField();
         GridBagConstraints gbc_tfReply = new GridBagConstraints();
         gbc_tfReply.gridwidth = 2;
@@ -115,7 +112,7 @@ public class JMSBankFrame extends JFrame implements MessageListener {
         gbc_tfReply.gridy = 1;
         contentPane.add(tfReply, gbc_tfReply);
         tfReply.setColumns(10);
-
+        
         JButton btnSendReply = new JButton("send reply");
         btnSendReply.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -127,7 +124,7 @@ public class JMSBankFrame extends JFrame implements MessageListener {
                     list.repaint();
                     try {
                         // todo: sent JMS message with the reply to Loan Broker
-                        sendRequestReply(rr);
+                        loanBrokerAppGateway.responseToBroker(reply);
                     } catch (JMSException ex) {
                         Logger.getLogger(JMSBankFrame.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -140,45 +137,8 @@ public class JMSBankFrame extends JFrame implements MessageListener {
         gbc_btnSendReply.gridy = 1;
         contentPane.add(btnSendReply, gbc_btnSendReply);
     }
-
-    public void createConnection() throws JMSException {
-        //created ConnectionFactory object for creating connection 
-        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(ActiveMQConnection.DEFAULT_BROKER_URL);
-        factory.setTrustAllPackages(true);
-        //Establish the connection
-        Connection connection = factory.createConnection();
-        connection.start();
-        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queueRequest = session.createQueue("bankRequest");
-
-        //Set up a consumer to consume messages off of the admin queue
-        MessageConsumer consumer = session.createConsumer(queueRequest);
-        consumer.setMessageListener(this);
-
-        //Set producer
-        Queue queueReply = session.createQueue("bankReply");
-        producer = session.createProducer(queueReply);
-    }
-
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            if (msg instanceof ObjectMessage) {
-                Object object = ((ObjectMessage) msg).getObject();
-                if (object instanceof BankInterestRequest) {
-                    BankInterestRequest bankInterestRequest = (BankInterestRequest) object;
-                    RequestReply requestReply = new RequestReply(bankInterestRequest, null);
-                    this.listModel.addElement(requestReply);
-                }
-            }
-        } catch (JMSException ex) {
-            Logger.getLogger(LoanBrokerFrame.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    public void sendRequestReply(RequestReply requestReply) throws JMSException {
-        ObjectMessage objectMessage = session.createObjectMessage();
-        objectMessage.setObject(requestReply);
-        producer.send(objectMessage);
+    
+    public void add(BankInterestReply reply) {
+        this.listModel.addElement(new RequestReply(null, reply));
     }
 }

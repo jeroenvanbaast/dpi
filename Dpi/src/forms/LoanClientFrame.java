@@ -1,5 +1,6 @@
 package forms;
 
+import gateway.LoanBrokerAppGateway;
 import models.LoanReply;
 import models.LoanRequest;
 import java.awt.EventQueue;
@@ -8,20 +9,9 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.jms.Session;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.Topic;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -34,10 +24,8 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import models.RequestReply;
-import org.apache.activemq.ActiveMQConnection;
-import org.apache.activemq.ActiveMQConnectionFactory;
 
-public class LoanClientFrame extends JFrame implements MessageListener {
+public class LoanClientFrame extends JFrame {
 
     /**
      *
@@ -54,14 +42,14 @@ public class LoanClientFrame extends JFrame implements MessageListener {
     private JTextField tfTime;
 
     // fields for mq connection
-    private Session session;
-    private MessageProducer producer;
+    private LoanBrokerAppGateway loanBrokerAppGateway;
 
     /**
      * Create the frame.
      */
     public LoanClientFrame() throws JMSException {
-        createConnection();
+        loanBrokerAppGateway = new LoanBrokerAppGateway(this);        
+        loanBrokerAppGateway.onLoanReplyArrived();
         setTitle("Loan Client");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -143,8 +131,10 @@ public class LoanClientFrame extends JFrame implements MessageListener {
                 int time = Integer.parseInt(tfTime.getText());
 
                 LoanRequest request = new LoanRequest(ssn, amount, time);
+
                 try {
-                    sendLoanRequest(request);
+                    loanBrokerAppGateway.applyForLoan(request);
+                   
                 } catch (JMSException ex) {
                     Logger.getLogger(LoanClientFrame.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -169,7 +159,6 @@ public class LoanClientFrame extends JFrame implements MessageListener {
 
         requestReplyList = new JList<RequestReply<LoanRequest, LoanReply>>(listModel);
         scrollPane.setViewportView(requestReplyList);
-
     }
 
     /**
@@ -207,50 +196,8 @@ public class LoanClientFrame extends JFrame implements MessageListener {
         });
     }
 
-    public void createConnection() throws JMSException {
-        //created ConnectionFactory object for creating connection 
-        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(ActiveMQConnection.DEFAULT_BROKER_URL);
-        factory.setTrustAllPackages(true);
-        //Establish the connection
-        Connection connection = factory.createConnection();
-        connection.start();
-        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queueLoanRequest = session.createQueue("loanRequest");
+   public void add(LoanReply reply){
+       this.listModel.addElement(new RequestReply(null,reply));
+   }
 
-        //Set up a consumer to consume messages off of the admin queue
-        Queue queueLoanReply = session.createQueue("loanReply");
-        MessageConsumer consumer = session.createConsumer(queueLoanReply);
-        consumer.setMessageListener(this);
-
-        //Added as a producer
-        producer = session.createProducer(queueLoanRequest);
-    }
-
-    public void sendLoanRequest(LoanRequest loanRequest) throws JMSException {
-        // Create and send the message
-        ObjectMessage objectMessage = session.createObjectMessage();
-        objectMessage.setObject(loanRequest);
-        producer.send(objectMessage);
-    }
-
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            if (msg instanceof ObjectMessage) {
-                Object object = ((ObjectMessage) msg).getObject();
-                if (object instanceof RequestReply) {
-                    RequestReply requestReply = (RequestReply) object;
-                    recieveLoanReply(requestReply);
-                }
-            }
-        } catch (JMSException ex) {
-            Logger.getLogger(LoanBrokerFrame.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    public void recieveLoanReply(RequestReply requestReply) {
-        LoanRequest loanRequest = (LoanRequest) requestReply.getRequest();
-        listModel.removeElement(getRequestReply(loanRequest));
-        listModel.addElement(requestReply);
-    }
 }
