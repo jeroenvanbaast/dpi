@@ -31,7 +31,8 @@ import models.*;
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-public class LoanBrokerFrame extends JFrame {
+public class LoanBrokerFrame extends JFrame
+{
 
     /**
      *
@@ -44,13 +45,18 @@ public class LoanBrokerFrame extends JFrame {
     private BankAppGateway bankAppGateway;
     private LoanClientAppGateway loanClientAppGateway;
 
-    public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
+    public static void main(String[] args)
+    {
+        EventQueue.invokeLater(new Runnable()
+        {
+            public void run()
+            {
+                try
+                {
                     LoanBrokerFrame frame = new LoanBrokerFrame();
                     frame.setVisible(true);
-                } catch (Exception e) {
+                } catch (Exception e)
+                {
                     e.printStackTrace();
                 }
             }
@@ -60,7 +66,8 @@ public class LoanBrokerFrame extends JFrame {
     /**
      * Create the frame.
      */
-    public LoanBrokerFrame() throws JMSException {
+    public LoanBrokerFrame() throws JMSException
+    {
         bankAppGateway = new BankAppGateway(this);
         bankAppGateway.onBankReplyArrived();
         loanClientAppGateway = new LoanClientAppGateway(this);
@@ -72,10 +79,22 @@ public class LoanBrokerFrame extends JFrame {
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         GridBagLayout gbl_contentPane = new GridBagLayout();
-        gbl_contentPane.columnWidths = new int[]{46, 31, 86, 30, 89, 0};
-        gbl_contentPane.rowHeights = new int[]{233, 23, 0};
-        gbl_contentPane.columnWeights = new double[]{1.0, 0.0, 1.0, 0.0, 0.0, Double.MIN_VALUE};
-        gbl_contentPane.rowWeights = new double[]{1.0, 0.0, Double.MIN_VALUE};
+        gbl_contentPane.columnWidths = new int[]
+        {
+            46, 31, 86, 30, 89, 0
+        };
+        gbl_contentPane.rowHeights = new int[]
+        {
+            233, 23, 0
+        };
+        gbl_contentPane.columnWeights = new double[]
+        {
+            1.0, 0.0, 1.0, 0.0, 0.0, Double.MIN_VALUE
+        };
+        gbl_contentPane.rowWeights = new double[]
+        {
+            1.0, 0.0, Double.MIN_VALUE
+        };
         contentPane.setLayout(gbl_contentPane);
 
         JScrollPane scrollPane = new JScrollPane();
@@ -91,11 +110,14 @@ public class LoanBrokerFrame extends JFrame {
         scrollPane.setViewportView(list);
     }
 
-    private JListLine getRequestReply(LoanRequest request) {
+    private JListLine getRequestReply(LoanRequest request)
+    {
 
-        for (int i = 0; i < listModel.getSize(); i++) {
+        for (int i = 0; i < listModel.getSize(); i++)
+        {
             JListLine rr = listModel.get(i);
-            if (rr.getLoanRequest() == request) {
+            if (rr.getLoanRequest().equals(request))
+            {
                 return rr;
             }
         }
@@ -103,43 +125,48 @@ public class LoanBrokerFrame extends JFrame {
         return null;
     }
 
-    public void add(LoanRequest loanRequest) {
+    public void add(LoanRequest loanRequest)
+    {
         listModel.addElement(new JListLine(loanRequest));
     }
 
-    public void add(LoanRequest loanRequest, BankInterestRequest bankRequest) {
+    public void add(LoanRequest loanRequest, BankInterestRequest bankRequest)
+    {
         JListLine rr = getRequestReply(loanRequest);
-        if (rr != null && bankRequest != null) {
+        if (rr != null && bankRequest != null)
+        {
             rr.setBankRequest(bankRequest);
             list.repaint();
         }
     }
 
-    public void add(LoanRequest loanRequest, BankInterestReply bankReply) {
+    public void add(LoanRequest loanRequest, BankInterestReply bankReply)
+    {
         JListLine rr = getRequestReply(loanRequest);
-        if (rr != null && bankReply != null) {
+        if (rr != null && bankReply != null)
+        {
             rr.setBankReply(bankReply);;
             list.repaint();
         }
     }
-    
-    public void recievedLoanRequest(LoanRequest request) throws JMSException{
+
+    public void recievedLoanRequest(LoanRequest request) throws JMSException
+    {
         BankInterestRequest bankRequest = new BankInterestRequest();
         bankRequest.setAmount(request.getAmount());
         bankRequest.setLoanRequest(request);
         bankRequest.setTime(request.getTime());
         this.bankAppGateway.sendBankRequest(bankRequest);
     }
-    
-    public void recievedBankReply(BankInterestReply reply) throws JMSException{
+
+    public void recievedBankReply(BankInterestReply reply) throws JMSException
+    {
+        add(reply.getLoanRequest(),reply);
         LoanReply loanReply = new LoanReply();
         loanReply.setInterest(reply.getInterest());
         loanReply.setQuoteID(reply.getQuoteId());
+        loanReply.setLoanRequest(reply.getLoanRequest());
         this.loanClientAppGateway.SendLoanReply(loanReply);
     }
-    
-    public void add(BankInterestReply reply){
-    
-    }
-    
+
 }

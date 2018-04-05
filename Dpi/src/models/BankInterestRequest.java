@@ -12,7 +12,7 @@ public class BankInterestRequest implements Serializable {
     private int amount; // the requested loan amount
     private int time; // the requested loan period
     private LoanRequest loanRequest;
-
+    
     public BankInterestRequest() {
         super();
         this.amount = 0;

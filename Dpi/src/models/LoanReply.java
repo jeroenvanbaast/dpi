@@ -12,7 +12,8 @@ public class LoanReply implements Serializable{
 
         private double interest; // the interest that the bank offers
         private String bankID; // the unique quote identification
-
+        private LoanRequest loanRequest;
+        
     public LoanReply() {
         super();
         this.interest = 0;
@@ -38,6 +39,16 @@ public class LoanReply implements Serializable{
 
     public void setQuoteID(String quoteID) {
         this.bankID = quoteID;
+    }
+
+    public LoanRequest getLoanRequest()
+    {
+        return loanRequest;
+    }
+
+    public void setLoanRequest(LoanRequest loanRequest)
+    {
+        this.loanRequest = loanRequest;
     }
     
     @Override
