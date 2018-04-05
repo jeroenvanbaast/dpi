@@ -69,7 +69,7 @@ public class JMSBankFrame extends JFrame {
      */
     public JMSBankFrame() throws JMSException {
         loanBrokerAppGateway = new LoanBrokerAppGateway(this);
-        
+        loanBrokerAppGateway.onBankReplyArrived();
         setTitle("JMS Bank - ABN AMRO");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 300);
@@ -138,7 +138,7 @@ public class JMSBankFrame extends JFrame {
         contentPane.add(btnSendReply, gbc_btnSendReply);
     }
     
-    public void add(BankInterestReply reply) {
-        this.listModel.addElement(new RequestReply(null, reply));
+    public void add(BankInterestRequest request) {
+        this.listModel.addElement(new RequestReply(request, new BankInterestReply()));
     }
 }

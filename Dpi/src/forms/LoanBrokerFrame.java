@@ -123,4 +123,23 @@ public class LoanBrokerFrame extends JFrame {
         }
     }
     
+    public void recievedLoanRequest(LoanRequest request) throws JMSException{
+        BankInterestRequest bankRequest = new BankInterestRequest();
+        bankRequest.setAmount(request.getAmount());
+        bankRequest.setLoanRequest(request);
+        bankRequest.setTime(request.getTime());
+        this.bankAppGateway.sendBankRequest(bankRequest);
+    }
+    
+    public void recievedBankReply(BankInterestReply reply) throws JMSException{
+        LoanReply loanReply = new LoanReply();
+        loanReply.setInterest(reply.getInterest());
+        loanReply.setQuoteID(reply.getQuoteId());
+        this.loanClientAppGateway.SendLoanReply(loanReply);
+    }
+    
+    public void add(BankInterestReply reply){
+    
+    }
+    
 }

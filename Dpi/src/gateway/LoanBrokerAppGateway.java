@@ -35,14 +35,14 @@ public class LoanBrokerAppGateway {
     private JMSBankFrame jmsBankFrame;
 
     public LoanBrokerAppGateway(LoanClientFrame frame) throws JMSException {
-        this.messageSenderGateway = new MessageSenderGateway("laonRequest");
+        this.messageSenderGateway = new MessageSenderGateway("loanRequest");
         this.messageReceiverGateway = new MessageReceiverGateway("loanReply");
         this.loanClientFrame = frame;
     }
 
     public LoanBrokerAppGateway(JMSBankFrame frame) throws JMSException {
-        this.messageSenderGatewayBank = new MessageSenderGateway("bankRequest");
-        this.messageReceiverGatewayBank = new MessageReceiverGateway("bankReply");
+        this.messageSenderGatewayBank = new MessageSenderGateway("bankReply");
+        this.messageReceiverGatewayBank = new MessageReceiverGateway("bankRequest");
         this.jmsBankFrame = frame;
     }
 
@@ -52,7 +52,7 @@ public class LoanBrokerAppGateway {
     }
 
     public void responseToBroker(BankInterestReply reply) throws JMSException {
-        ObjectMessage message = messageSenderGateway.createMessage(reply);
+        ObjectMessage message = messageSenderGatewayBank.createMessage(reply);
         messageSenderGatewayBank.send(message);
     }
 
@@ -70,16 +70,14 @@ public class LoanBrokerAppGateway {
     }
 
     public void onBankReplyArrived() throws JMSException {
-        messageReceiverGatewayBank.setListener(new MessageListener() {
-            @Override
-            public void onMessage(Message msg) {
-                if(msg instanceof ObjectMessage){
-                    try {
-                        BankInterestReply reply = (BankInterestReply) ((ObjectMessage) msg).getObject();
-                        jmsBankFrame.add(reply);
-                    } catch (JMSException ex) {
-                        Logger.getLogger(LoanBrokerAppGateway.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+        messageReceiverGatewayBank.setListener((Message msg) ->
+        {
+            if(msg instanceof ObjectMessage){
+                try {
+                    BankInterestRequest reply = (BankInterestRequest) ((ObjectMessage) msg).getObject();
+                    jmsBankFrame.add(reply);
+                } catch (JMSException ex) {
+                    Logger.getLogger(LoanBrokerAppGateway.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });

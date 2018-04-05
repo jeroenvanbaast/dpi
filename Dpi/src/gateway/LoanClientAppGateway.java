@@ -26,8 +26,8 @@ public class LoanClientAppGateway {
     private LoanBrokerFrame frame;
 
     public LoanClientAppGateway(LoanBrokerFrame frame) throws JMSException {
-        this.messageSenderGateway = new MessageSenderGateway("loanClientRequest");
-        this.messageReceiverGateway = new MessageReceiverGateway("loanClientReply");
+        this.messageSenderGateway = new MessageSenderGateway("loanReply");
+        this.messageReceiverGateway = new MessageReceiverGateway("loanRequest");
         this.frame = frame;
     }
 
@@ -44,6 +44,7 @@ public class LoanClientAppGateway {
                       try {
                           LoanRequest request = (LoanRequest) ((ObjectMessage) msg).getObject();
                           frame.add(request);
+                          frame.recievedLoanRequest(request);
                       } catch (JMSException ex) {
                           Logger.getLogger(LoanClientAppGateway.class.getName()).log(Level.SEVERE, null, ex);
                       }

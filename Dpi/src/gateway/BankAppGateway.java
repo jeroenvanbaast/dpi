@@ -45,7 +45,8 @@ public class BankAppGateway {
                  if (msg instanceof ObjectMessage) {
                      try {
                          BankInterestReply reply = (BankInterestReply) ((ObjectMessage) msg).getObject();
-                         frame.add(new LoanRequest(),reply);
+                         frame.add(reply);
+                         frame.recievedBankReply(reply);
                      } catch (JMSException ex) {
                          Logger.getLogger(BankAppGateway.class.getName()).log(Level.SEVERE, null, ex);
                      }
