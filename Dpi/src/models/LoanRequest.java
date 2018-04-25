@@ -30,6 +30,7 @@ public class LoanRequest implements Serializable{
         this.ssn = ssn;
         this.amount = amount;
         this.time = time;
+         this.uuid = UUID.randomUUID();
     }
 
     public int getSsn() {

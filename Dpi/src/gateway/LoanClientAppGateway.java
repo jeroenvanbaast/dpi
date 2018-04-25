@@ -25,30 +25,30 @@ public class LoanClientAppGateway {
     private MessageReceiverGateway messageReceiverGateway;
     private LoanBrokerFrame frame;
 
-    public LoanClientAppGateway(LoanBrokerFrame frame) throws JMSException {
+    public LoanClientAppGateway(LoanBrokerFrame frame) {
         this.messageSenderGateway = new MessageSenderGateway("loanReply");
         this.messageReceiverGateway = new MessageReceiverGateway("loanRequest");
         this.frame = frame;
     }
 
-    public void SendLoanReply(LoanReply reply) throws JMSException {
+    public void SendLoanReply(LoanReply reply) {
         ObjectMessage message = messageSenderGateway.createMessage(reply);
         this.messageSenderGateway.send(message);
     }
 
-    public void onLoanRequestArrived() throws JMSException {
+    public void onLoanRequestArrived() {
         messageReceiverGateway.setListener(new MessageListener() {
             @Override
             public void onMessage(Message msg) {
-                  if (msg instanceof ObjectMessage) {
-                      try {
-                          LoanRequest request = (LoanRequest) ((ObjectMessage) msg).getObject();
-                          frame.add(request);
-                          frame.recievedLoanRequest(request);
-                      } catch (JMSException ex) {
-                          Logger.getLogger(LoanClientAppGateway.class.getName()).log(Level.SEVERE, null, ex);
-                      }
-                  }
+                if (msg instanceof ObjectMessage) {
+                    try {
+                        LoanRequest request = (LoanRequest) ((ObjectMessage) msg).getObject();
+                        frame.add(request);
+                        frame.recievedLoanRequest(request);
+                    } catch (JMSException ex) {
+                        Logger.getLogger(LoanClientAppGateway.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
             }
         });
     }

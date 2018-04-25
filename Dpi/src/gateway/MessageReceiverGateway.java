@@ -5,6 +5,8 @@
  */
 package gateway;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
@@ -26,20 +28,28 @@ public class MessageReceiverGateway {
     private Queue queue;
     private MessageConsumer consumer;
 
-    public MessageReceiverGateway(String channelName) throws JMSException {
-        //created ConnectionFactory object for creating connection 
-        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(ActiveMQConnection.DEFAULT_BROKER_URL);
-        factory.setTrustAllPackages(true);
-        //Establish the connection
-        Connection connection = factory.createConnection();
-        connection.start();
-        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        queue = session.createQueue(channelName);
-        consumer = session.createConsumer(queue);
+    public MessageReceiverGateway(String channelName) {
+        try {
+            //created ConnectionFactory object for creating connection
+            ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(ActiveMQConnection.DEFAULT_BROKER_URL);
+            factory.setTrustAllPackages(true);
+            //Establish the connection
+            Connection connection = factory.createConnection();
+            connection.start();
+            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            queue = session.createQueue(channelName);
+            consumer = session.createConsumer(queue);
+        } catch (JMSException ex) {
+            Logger.getLogger(MessageReceiverGateway.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
     }
 
-    public void setListener(MessageListener ml) throws JMSException {
-        consumer.setMessageListener(ml);
+    public void setListener(MessageListener ml) {
+        try {
+            consumer.setMessageListener(ml);
+        } catch (JMSException ex) {
+            Logger.getLogger(MessageReceiverGateway.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

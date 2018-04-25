@@ -6,19 +6,6 @@ import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import static java.awt.image.ImageObserver.WIDTH;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.jms.Connection;
-import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.Session;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
@@ -28,8 +15,6 @@ import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
 import models.*;
-import org.apache.activemq.ActiveMQConnection;
-import org.apache.activemq.ActiveMQConnectionFactory;
 
 public class LoanBrokerFrame extends JFrame
 {
@@ -66,7 +51,7 @@ public class LoanBrokerFrame extends JFrame
     /**
      * Create the frame.
      */
-    public LoanBrokerFrame() throws JMSException
+    public LoanBrokerFrame()
     {
         bankAppGateway = new BankAppGateway(this);
         bankAppGateway.onBankReplyArrived();
@@ -150,7 +135,7 @@ public class LoanBrokerFrame extends JFrame
         }
     }
 
-    public void recievedLoanRequest(LoanRequest request) throws JMSException
+    public void recievedLoanRequest(LoanRequest request)
     {
         BankInterestRequest bankRequest = new BankInterestRequest();
         bankRequest.setAmount(request.getAmount());
@@ -159,7 +144,7 @@ public class LoanBrokerFrame extends JFrame
         this.bankAppGateway.sendBankRequest(bankRequest);
     }
 
-    public void recievedBankReply(BankInterestReply reply) throws JMSException
+    public void recievedBankReply(BankInterestReply reply)
     {
         add(reply.getLoanRequest(),reply);
         LoanReply loanReply = new LoanReply();

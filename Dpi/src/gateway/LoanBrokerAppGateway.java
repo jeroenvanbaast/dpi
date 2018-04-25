@@ -34,29 +34,29 @@ public class LoanBrokerAppGateway {
     private LoanClientFrame loanClientFrame;
     private JMSBankFrame jmsBankFrame;
 
-    public LoanBrokerAppGateway(LoanClientFrame frame) throws JMSException {
+    public LoanBrokerAppGateway(LoanClientFrame frame) {
         this.messageSenderGateway = new MessageSenderGateway("loanRequest");
         this.messageReceiverGateway = new MessageReceiverGateway("loanReply");
         this.loanClientFrame = frame;
     }
 
-    public LoanBrokerAppGateway(JMSBankFrame frame) throws JMSException {
+    public LoanBrokerAppGateway(JMSBankFrame frame, String name) {
         this.messageSenderGatewayBank = new MessageSenderGateway("bankReply");
-        this.messageReceiverGatewayBank = new MessageReceiverGateway("bankRequest");
+        this.messageReceiverGatewayBank = new MessageReceiverGateway("bankRequest" + name);
         this.jmsBankFrame = frame;
     }
 
-    public void applyForLoan(LoanRequest request) throws JMSException {
+    public void applyForLoan(LoanRequest request) {
         ObjectMessage message = messageSenderGateway.createMessage(request);
         messageSenderGateway.send(message);
     }
 
-    public void responseToBroker(BankInterestReply reply) throws JMSException {
+    public void responseToBroker(BankInterestReply reply){
         ObjectMessage message = messageSenderGatewayBank.createMessage(reply);
         messageSenderGatewayBank.send(message);
     }
 
-    public void onLoanReplyArrived() throws JMSException {
+    public void onLoanReplyArrived() {
         messageReceiverGateway.setListener((Message msg) -> {
             if (msg instanceof ObjectMessage) {
                 try {
@@ -69,7 +69,7 @@ public class LoanBrokerAppGateway {
         });
     }
 
-    public void onBankReplyArrived() throws JMSException {
+    public void onBankReplyArrived() {
         messageReceiverGatewayBank.setListener((Message msg) ->
         {
             if(msg instanceof ObjectMessage){
