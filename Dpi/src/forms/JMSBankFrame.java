@@ -116,7 +116,6 @@ public class JMSBankFrame extends JFrame {
                 if (rr != null && reply != null) {
                     rr.setReply(reply);
                     list.repaint();
-                    // todo: sent JMS message with the reply to Loan Broker
                     loanBrokerAppGateway.responseToBroker(reply);
 
                 }

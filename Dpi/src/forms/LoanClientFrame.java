@@ -194,7 +194,7 @@ public class LoanClientFrame extends JFrame {
     public void add(LoanReply reply) {
         RequestReply rr = getRequestReply(reply.getLoanRequest());
         rr.setReply(reply);
-        this.listModel.addElement(rr);
+        this.requestReplyList.repaint();
     }
 
 }
